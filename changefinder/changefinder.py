@@ -183,7 +183,7 @@ class prospective():
         calculate the score of the input datum
 
         Args:
-            input datum
+            x: input datum
 
         Returns:
             float: score of the input datum
