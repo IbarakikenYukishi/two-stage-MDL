@@ -2,6 +2,7 @@
 figs
 data
 results
+jupyter
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
