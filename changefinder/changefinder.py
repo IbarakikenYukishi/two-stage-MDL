@@ -128,7 +128,7 @@ class retrospective():
             X: input data
 
         Returns:
-            float: scores
+            ndarray: scores of the input data
         """
         detector = prospective(self.__r, self.__order, self.__smooth)
         scores = []
@@ -145,8 +145,7 @@ class retrospective():
             X: input data
 
         Returns:
-            float: indice of alarms
-
+            ndarray: binarized scores
         """
         scores = self.calc_scores(X)
         alarms = np.where(scores >= self.__threshold, 1, 0)

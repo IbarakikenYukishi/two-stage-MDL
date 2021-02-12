@@ -102,7 +102,7 @@ class retrospective:
             X: input data
 
         Returns:
-            ndarray: indice of alarms
+            ndarray: binarized scores
         """
         scores = self.calc_scores(X)
         alarms = np.where(scores >= self.__threshold, 1, 0)
