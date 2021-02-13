@@ -3,9 +3,9 @@ import scipy.linalg as sl
 from scipy import special
 
 
-class retrospective:
+class Retrospective:
     """
-    S-MDL (retrospective)
+    S-MDL (Retrospective)
     Diffierential MDL Change Statistics
     """
 
@@ -41,7 +41,7 @@ class retrospective:
         Returns:
             ndarray: scores of the input data
         """
-        detector = prospective(
+        detector = Prospective(
             h=self.__h, encoding_func=self.__encoding_func, complexity_func=self.__complexity_func)
 
         if X.ndim == 1:
@@ -96,9 +96,9 @@ class retrospective:
             return alarms_0, alarms_1, alarms_2
 
 
-class prospective:
+class Prospective:
     """
-    S-MDL (prospective)
+    S-MDL (Prospective)
     Diffierential MDL Change Statistics
     """
 

@@ -28,28 +28,28 @@ def log_star(k):
 
 
 
-def app_nml_gaussian(X, mu_max=100, div_min=0.1, div_max=5):
+def nml_gaussian(X, mu_max=100, div_min=0.1, div_max=5):
     """
         encode X by approximation of gaussian's NML by limiting integral domain.
     """
     n = len(X)
     Xmat = X.reshape((n, -1))
     sigma = np.std(Xmat)
-    log_complexity = app_complexity_gaussian(
+    log_complexity = complexity_gaussian(
         n, mu_max=mu_max, div_min=div_min, div_max=div_max)
 
     log_pdf = n * (0.5 + np.log(sigma + 0.0000001) + 0.5 * np.log(2 * np.pi))
     return log_pdf + log_complexity
 
 @fts.lru_cache(maxsize=None)
-def app_complexity_gaussian(h, mu_max=100, div_min=0.1, div_max=5):
+def complexity_gaussian(h, mu_max=100, div_min=0.1, div_max=5):
     """
         X's approximate gaussian stochastic complexity by limiting integral domain.
     """
     return (1 / 2) * np.log(16 * mu_max * mu_max / (np.pi * div_min)) + (h / 2) * np.log(h / (2 * np.e)) - special.gammaln((h - 1) / 2)
 
 
-def app_nml_poisson(X, lmd_max):
+def nml_poisson(X, lmd_max):
     n = len(X)
     lmd_hat = np.mean(X)
     if lmd_hat == 0:
@@ -57,18 +57,18 @@ def app_nml_poisson(X, lmd_max):
     else:
         neg_log = -n * lmd_hat * np.log(lmd_hat) + \
             n * lmd_hat + np.sum(special.gammaln(X + 1))
-    cpl = app_complexity_poisson(n, lmd_max)
+    cpl = complexity_poisson(n, lmd_max)
     return neg_log + cpl
 
 
-def app_complexity_poisson(h, lmd_max):
+def complexity_poisson(h, lmd_max):
     return 0.5 * np.log(h / (2 * np.pi)) + (1 + lmd_max / 2) * np.log(2) + log_star(lmd_max)
 
 
 
 
 
-def app_nml_multgaussian(X, R=10e6, lambda_min=10e-6):  # ここ怪しい
+def nml_multgaussian(X, R=10e6, lambda_min=10e-6):  # ここ怪しい
     eps = 0.000001
     n = X.shape[0]
     m = X.shape[1]
@@ -82,14 +82,14 @@ def app_nml_multgaussian(X, R=10e6, lambda_min=10e-6):  # ここ怪しい
         0.5 * np.trace(res_X.dot(sl.pinv(S)).dot(res_X.T)
                        )  # もっと効率的な計算方法があるはず。トレースと固有値の関係性?
 
-    log_complexity = app_complexity_multgaussian(
+    log_complexity = complexity_multgaussian(
         n, m, R=10e6, lambda_min=10e-6)
     # print(log_complexity)
     return log_pdf + log_complexity
 
 
 @fts.lru_cache(maxsize=None)
-def app_complexity_multgaussian(n, m, R=10e6, lambda_min=10e-6):  # 多分合ってる
+def complexity_multgaussian(n, m, R=10e6, lambda_min=10e-6):  # 多分合ってる
     """
         X's approximate multi-dimensional gaussian stochastic complexity by limiting integral domain.
     """

@@ -1,12 +1,11 @@
 import numpy as np
 from scipy import stats
-from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 
 
-class prospective:
+class Prospective:
     """
-    BOCPD (prospective)
+    BOCPD (Prospective)
     """
 
     def __init__(self, hazard_func, likelihood_func):
@@ -59,9 +58,9 @@ class prospective:
         return score
 
 
-class retrospective:
+class Retrospective:
     """
-    BOCPD (retrospective)
+    BOCPD (Retrospective)
     """
 
     def __init__(self, hazard_func, likelihood_func, threshold=0.5):
@@ -86,7 +85,7 @@ class retrospective:
             ndarray: scores of the input data
         """
         likelihood_func = deepcopy(self.__likelihood_func)
-        detector = prospective(
+        detector = Prospective(
             hazard_func=self.__hazard_func, likelihood_func=likelihood_func)
         scores = []
         for i in X:

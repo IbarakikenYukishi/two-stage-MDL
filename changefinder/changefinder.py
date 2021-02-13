@@ -46,7 +46,7 @@ class _SDAR_1Dim(object):
             self.__r * (x - self.__mu) ** 2
 
         # update parameters in AR model
-        what = self.LevinsonDurbin_algorithm(self.__cor, self.__order)
+        what = self._levinson_durbin_algorithm(self.__cor, self.__order)
 
         # prediction
         xhat = np.dot(-what[1:], (sub_sequence[::-1] - self.__mu)) + self.__mu
@@ -61,7 +61,7 @@ class _SDAR_1Dim(object):
 
         return outlier_score
 
-    def LevinsonDurbin_algorithm(self, r, ar_order):
+    def _levinson_durbin_algorithm(self, r, ar_order):
         """
         Solve a Yule-Walker equation by the Levinson-Durbin algorithm.
 
@@ -100,9 +100,9 @@ class _SDAR_1Dim(object):
         return coef
 
 
-class retrospective():
+class Retrospective():
     """
-    ChangeFinder (retrospective)
+    ChangeFinder (Retrospective)
     """
 
     def __init__(self, r=0.5, order=1, smooth=7, threshold=1):
@@ -130,7 +130,7 @@ class retrospective():
         Returns:
             ndarray: scores of the input data
         """
-        detector = prospective(self.__r, self.__order, self.__smooth)
+        detector = Prospective(self.__r, self.__order, self.__smooth)
         scores = []
         for i in X:
             score = detector.update(i)
@@ -152,9 +152,9 @@ class retrospective():
         return alarms
 
 
-class prospective():
+class Prospective():
     """
-    ChangeFinder (prospective)
+    ChangeFinder (Prospective)
     """
 
     def __init__(self, r=0.5, order=1, smooth=7):
