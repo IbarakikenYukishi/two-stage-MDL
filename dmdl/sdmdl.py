@@ -18,7 +18,7 @@ class Retrospective:
             delta_0: the upper bound on the Type-I error probability of 0th D-MDL
             delta_1: the upper bound on the Type-I error probability of 1st D-MDL
             delta_2: the upper bound on the Type-I error probability of 2nd D-MDL
-            order: return which order of D-MDL
+            order: return which order of D-MDL. if order=-1, return all the statistics.
         """
         self.__h = h
         self.__encoding_func = encoding_func
@@ -39,7 +39,7 @@ class Retrospective:
             X: input data
 
         Returns:
-            ndarray: scores of the input data
+            Union[ndarray, list]: scores of the input data
         """
         detector = Prospective(
             h=self.__h, encoding_func=self.__encoding_func, complexity_func=self.__complexity_func)
@@ -69,7 +69,7 @@ class Retrospective:
         elif self.__order == 2:
             return np.array(scores_2)
         else:
-            return np.array(scores_0), np.array(scores_1), np.array(scores_2)
+            return [np.array(scores_0), np.array(scores_1), np.array(scores_2)]
 
     def make_alarms(self, X):
         """
@@ -79,7 +79,7 @@ class Retrospective:
             X: input data
 
         Returns:
-            ndarray: indice of alarms
+            Union[ndarray, list]: indice of alarms
         """
         scores_0, scores_1, scores_2 = self.calc_scores(X)
         alarms_0 = np.where(scores_0 >= self.__threshold_0, 1, 0)
@@ -93,7 +93,7 @@ class Retrospective:
         elif self.__order == 2:
             return alarms_2
         else:
-            return alarms_0, alarms_1, alarms_2
+            return [alarms_0, alarms_1, alarms_2]
 
 
 class Prospective:
