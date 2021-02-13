@@ -3,6 +3,8 @@ import scipy.linalg as sl
 from scipy import special
 import functools as fts
 
+# TODO: docstring
+
 @fts.lru_cache(maxsize=None)
 def multigamma_ln(a, d):
     """
