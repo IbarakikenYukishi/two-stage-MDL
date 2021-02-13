@@ -9,26 +9,26 @@ class Retrospective:
     Diffierential MDL Change Statistics
     """
 
-    def __init__(self, h, encoding_func, complexity_func, sigma_0=0.05, sigma_1=0.05, sigma_2=0.05, order=-1):
+    def __init__(self, h, encoding_func, complexity_func, delta_0=0.05, delta_1=0.05, delta_2=0.05, order=-1):
         """
         Args:
             h: half window size
             encoding_func: encoding function
             complexity_func: parametric complexity of the encoding function
-            sigma_0: the upper bound of the Type-I error probability of 0th D-MDL
-            sigma_1: the upper bound of the Type-I error probability of 1st D-MDL
-            sigma_2: the upper bound of the Type-I error probability of 2nd D-MDL
+            delta_0: the upper bound of the Type-I error probability of 0th D-MDL
+            delta_1: the upper bound of the Type-I error probability of 1st D-MDL
+            delta_2: the upper bound of the Type-I error probability of 2nd D-MDL
             order: return which order of D-MDL
         """
         self.__h = h
         self.__encoding_func = encoding_func
         self.__complexity_func = complexity_func
         # thresholds are set so that the Type-I error probability is less than
-        # sigma
-        self.__threshold_0 = self.__complexity_func(2 * self.__h) - np.log(sigma_0)
-        self.__threshold_1 = 2 * self.__complexity_func(self.__h) - np.log(sigma_1)
+        # delta
+        self.__threshold_0 = self.__complexity_func(2 * self.__h) - np.log(delta_0)
+        self.__threshold_1 = 2 * self.__complexity_func(self.__h) - np.log(delta_1)
         self.__threshold_2 = 2 * \
-            (2 * self.__complexity_func(self.__h) - np.log(sigma_2))
+            (2 * self.__complexity_func(self.__h) - np.log(delta_2))
         self.__order = order
 
     def calc_scores(self, X):
