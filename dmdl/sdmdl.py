@@ -83,8 +83,8 @@ class Retrospective:
         """
         scores_0, scores_1, scores_2 = self.calc_scores(X)
         alarms_0 = np.where(scores_0 >= self.__threshold_0, 1, 0)
-        alarms_1 = np.where(scores_1 >= self.__threshold_0, 1, 0)
-        alarms_2 = np.where(scores_2 >= self.__threshold_0, 1, 0)
+        alarms_1 = np.where(scores_1 >= self.__threshold_1, 1, 0)
+        alarms_2 = np.where(scores_2 >= self.__threshold_2, 1, 0)
 
         if self.__order == 0:
             return alarms_0
