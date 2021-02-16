@@ -11,7 +11,19 @@ class Retrospective:
     Hierarchical Sequential D-MDL algorithm with SCAW2 (Prospective)
     """
 
-    def __init__(self, encoding_func, d, M=5, min_datapoints=1, delta_0=0.05, delta_1=0.05, delta_2=0.05, how_to_drop='all', order=-1, reliability=True):
+    def __init__(
+        self,
+        encoding_func,
+        d,
+        M=5,
+        min_datapoints=1,
+        delta_0=0.05,
+        delta_1=0.05,
+        delta_2=0.05,
+        how_to_drop='all',
+        order=-1,
+        reliability=True
+    ):
         """
         Args:
             encoding_func: encoding function
@@ -50,9 +62,18 @@ class Retrospective:
             list, list, list, ndarray: alarms, scores, cutpoints, and window sizes
         """
 
-        detector = Prospective(encoding_func=self.__encoding_func, d=self.__d, M=self.__M, min_datapoints=self.__min_datapoints,
-                               delta_0=self.__delta_0, delta_1=self.__delta_1, delta_2=self.__delta_2, how_to_drop=self.__how_to_drop,
-                               order=self.__order, reliability=self.__reliability)
+        detector = Prospective(
+            encoding_func=self.__encoding_func,
+            d=self.__d,
+            M=self.__M,
+            min_datapoints=self.__min_datapoints,
+            delta_0=self.__delta_0,
+            delta_1=self.__delta_1,
+            delta_2=self.__delta_2,
+            how_to_drop=self.__how_to_drop,
+            order=self.__order,
+            reliability=self.__reliability
+        )
 
         # alarms
         alarms_0 = []
@@ -125,7 +146,19 @@ class Prospective:
     Hierarchical Sequential D-MDL algorithm with SCAW2 (Prospective)
     """
 
-    def __init__(self, encoding_func, d, M=5, min_datapoints=1, delta_0=0.05, delta_1=0.05, delta_2=0.05, how_to_drop='all', order=-1, reliability=True):
+    def __init__(
+        self,
+        encoding_func,
+        d,
+        M=5,
+        min_datapoints=1,
+        delta_0=0.05,
+        delta_1=0.05,
+        delta_2=0.05,
+        how_to_drop='all',
+        order=-1,
+        reliability=True
+    ):
         """
         Args:
             encoding_func: encoding function
@@ -361,12 +394,12 @@ class Prospective:
             return np.nan, np.nan, np.nan
 
         # statistics of D-MDL
-        stat_list_0 = np.zeros(n - 1)
-        stat_list_0[:] = np.nan
-        stat_list_1 = np.zeros(n - 1)
-        stat_list_1[:] = np.nan
-        stat_list_2 = np.zeros(n - 1)
-        stat_list_2[:] = np.nan
+        stats_0 = np.zeros(n - 1)
+        stats_0[:] = np.nan
+        stats_1 = np.zeros(n - 1)
+        stats_1[:] = np.nan
+        stats_2 = np.zeros(n - 1)
+        stats_2[:] = np.nan
 
         # calculate the NML code length with no change beforehand for the
         # computational efficiency.
@@ -389,11 +422,12 @@ class Prospective:
                 latter_t = (sum(map((lambda x: x[0]), [self.__buckets[i] for i in range(cut, n)])), sum(
                     map((lambda x: 2 ** x[3]), [self.__buckets[i] for i in range(cut, n)])))
 
-                former_t_stat = self.__encoding_func(former_t)
-                latter_t_stat = self.__encoding_func(latter_t)
+                former_stat_t = self.__encoding_func(former_t)
+                latter_stat_t = self.__encoding_func(latter_t)
 
-                stat_list_0[cut - 1] = entire_stat - \
-                    former_t_stat - latter_t_stat
+                stat_t=former_stat_t+latter_stat_t
+
+                stats_0[cut - 1] = entire_stat - stat_t
 
             if self.__order != 0:  # if order==0, skip the computation of 1st and 2nd D-MDL
                 if start_1 <= cut <= end_1:  # 1st D-MDL
@@ -403,11 +437,13 @@ class Prospective:
                     latter_tm = (sum(map((lambda x: x[0]), [self.__buckets[i] for i in range(cut, n)])) + self.__buckets[cut - 1][0] - self.__buckets[cut - 1][1], sum(
                         map((lambda x: 2 ** x[3]), [self.__buckets[i] for i in range(cut, n)])) + 1)
 
-                    former_tm_stat = self.__encoding_func(former_tm)
-                    latter_tm_stat = self.__encoding_func(latter_tm)
+                    former_stat_tm = self.__encoding_func(former_tm)
+                    latter_stat_tm = self.__encoding_func(latter_tm)
 
-                    stat_list_1[
-                        cut - 1] = (entire_stat - former_t_stat - latter_t_stat) - (entire_stat - former_tm_stat - latter_tm_stat)
+                    stat_tm=former_stat_tm+latter_stat_tm
+
+                    stats_1[
+                        cut - 1] = (entire_stat - stat_t) - (entire_stat - stat_tm)
 
                 if start_2 <= cut <= end_2:  # 2nd D-MDL
                     former_tp = (sum(map((lambda x: x[0]), [self.__buckets[i] for i in range(0, cut)])) + self.__buckets[cut][0] - self.__buckets[cut][2], sum(
@@ -415,13 +451,15 @@ class Prospective:
                     latter_tp = (sum(map((lambda x: x[0]), [self.__buckets[i] for i in range(cut, n)])) - self.__buckets[cut][0] + self.__buckets[cut][2], sum(
                         map((lambda x: 2 ** x[3]), [self.__buckets[i] for i in range(cut, n)])) - 1)
 
-                    former_tp_stat = self.__encoding_func(former_tp)
-                    latter_tp_stat = self.__encoding_func(latter_tp)
+                    former_stat_tp = self.__encoding_func(former_tp)
+                    latter_stat_tp = self.__encoding_func(latter_tp)
 
-                    stat_list_2[cut - 1] = ((entire_stat - former_tp_stat - latter_tp_stat) - (entire_stat - former_t_stat - latter_t_stat)) - (
-                        (entire_stat - former_t_stat - latter_t_stat) - (entire_stat - former_tm_stat - latter_tm_stat))
+                    stat_tp=former_stat_tp+latter_stat_tp                    
 
-        return stat_list_0, stat_list_1, stat_list_2
+                    stats_2[cut - 1] = ((entire_stat - stat_tp) - (entire_stat - stat_t)) - (
+                        (entire_stat - stat_t) - (entire_stat - stat_tm))
+
+        return stats_0, stats_1, stats_2
 
     def _acquire_endpoints(self, num_datapoints, order):
         """
