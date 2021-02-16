@@ -68,13 +68,22 @@ class Retrospective:
         scores_1 = scores_1 + [np.nan] * self.__h
         scores_2 = scores_2 + [np.nan] * self.__h
 
-        inf = 1e10
-        alarms_0 = np.where(np.nan_to_num(
-            scores[0], nan=-inf) >= self.__threshold_0, 1, 0)
-        alarms_1 = np.where(np.nan_to_num(
-            scores[1], nan=-inf) >= self.__threshold_1, 1, 0)
-        alarms_2 = np.where(np.nan_to_num(
-            scores[2], nan=-inf) >= self.__threshold_2, 1, 0)
+        # ignore warnings made by np.nan
+        with np.errstate(invalid='ignore'):
+            alarms_0 = np.greater(
+                scores_0,
+                self.__threshold_0
+            ).astype(int)
+        with np.errstate(invalid='ignore'):
+            alarms_1 = np.greater(
+                scores_1,
+                self.__threshold_1
+            ).astype(int)
+        with np.errstate(invalid='ignore'):
+            alarms_2 = np.greater(
+                scores_2,
+                self.__threshold_2
+            ).astype(int)
 
         return [np.array(scores_0), np.array(scores_1), np.array(scores_2)], [alarms_0, alarms_1, alarms_2]
 

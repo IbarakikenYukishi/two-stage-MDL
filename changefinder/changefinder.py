@@ -148,7 +148,14 @@ class Retrospective():
             ndarray: binarized scores
         """
         scores = self.calc_scores(X)
-        alarms = np.where(scores >= self.__threshold, 1, 0)
+
+        # ignore warnings made by np.nan
+        with np.errstate(invalid='ignore'):
+            alarms = np.greater(
+                scores,
+                self.__threshold
+            ).astype(int)
+
         return alarms
 
 
