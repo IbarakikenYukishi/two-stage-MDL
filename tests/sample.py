@@ -5,8 +5,10 @@ import optuna
 import changefinder
 import bocpd
 import dmdl.sdmdl as sdmdl
+import dmdl.hsdmdl1 as hsdmdl1
 import dmdl.hsdmdl2 as hsdmdl2
 import utils.sdmdl_nml as sdmdl_nml
+import utils.hsdmdl1_nml as hsdmdl1_nml
 import utils.hsdmdl2_nml as hsdmdl2_nml
 from copy import deepcopy
 from functools import partial
@@ -38,7 +40,7 @@ def one_mean_changing(transition_period):
 def _calc_metrics(data, changepoints, tolerance_delay, retrospective):
     _retrospective = deepcopy(retrospective)
     scores = _retrospective.calc_scores(data)
-    AUC = calc_AUC(scores, changepoints, tolerance_delay)
+    AUC = calc_AUC(scores, changepoints, tolerance_delay, both=False)
     return AUC
 
 
@@ -101,7 +103,43 @@ def main():
         data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
     print("AUC: ", AUC)
 
-    print("Hierarchical 0th")
+    print("Hierarchical_SCAW1 0th")
+    lnml_gaussian = partial(hsdmdl1_nml.lnml_gaussian)
+    order=0
+    min_datapoints = 5
+    delta_0 =0.05
+    delta_1 = 0.05
+    delta_2 = 0.05
+    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=min_datapoints, delta_0=delta_0,
+                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
+    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
+    print("AUC: ", AUC)
+
+    print("Hierarchical_SCAW1 1st")
+    lnml_gaussian = partial(hsdmdl1_nml.lnml_gaussian)
+    order=1
+    min_datapoints = 5
+    delta_0 =0.05
+    delta_1 = 0.05
+    delta_2 = 0.05
+    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=min_datapoints, delta_0=delta_0,
+                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
+    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
+    print("AUC: ", AUC)
+
+    print("Hierarchical_SCAW1 2nd")
+    lnml_gaussian = partial(hsdmdl1_nml.lnml_gaussian)
+    order=2
+    min_datapoints = 5
+    delta_0 =0.05
+    delta_1 = 0.05
+    delta_2 = 0.05
+    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=min_datapoints, delta_0=delta_0,
+                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
+    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
+    print("AUC: ", AUC)
+
+    print("Hierarchical_SCAW2 0th")
     nml_gaussian = partial(hsdmdl2_nml.nml_gaussian)
     order=0
     min_datapoints = 5
@@ -113,7 +151,7 @@ def main():
     AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
     print("AUC: ", AUC)
 
-    print("Hierarchical 1st")
+    print("Hierarchical_SCAW2 1st")
     nml_gaussian = partial(hsdmdl2_nml.nml_gaussian)
     order=1
     min_datapoints = 5
@@ -125,7 +163,7 @@ def main():
     AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
     print("AUC: ", AUC)
 
-    print("Hierarchical 2nd")
+    print("Hierarchical_SCAW2 2nd")
     nml_gaussian = partial(hsdmdl2_nml.nml_gaussian)
     order=2
     min_datapoints = 5
