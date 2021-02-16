@@ -25,21 +25,27 @@ class Retrospective:
         self.__complexity_func = complexity_func
         # thresholds are set so that the Type-I error probability is less than
         # delta
-        self.__threshold_0 = self.__complexity_func(2 * self.__h) - np.log(delta_0)
-        self.__threshold_1 = 2 * self.__complexity_func(self.__h) - np.log(delta_1)
+        self.__threshold_0 = self.__complexity_func(
+            2 * self.__h) - np.log(delta_0)
+        self.__threshold_1 = 2 * \
+            self.__complexity_func(self.__h) - np.log(delta_1)
         self.__threshold_2 = 2 * \
             (2 * self.__complexity_func(self.__h) - np.log(delta_2))
         self.__order = order
 
-    def calc_scores(self, X):
+        # beta for calculation of the change probability
+        self.__beta = (np.log(1 - self.__delta_0) - np.log(self.__delta_0)) / \
+            (self.__complexity_func(2 * self.__h) - np.log(self.__delta_0))
+
+    def calc_all_stats(self, X):
         """
-        calculate scores
+        calculate all statistics
 
         Args:
             X: input data
 
         Returns:
-            Union[ndarray, list]: scores of the input data
+            list, list: scores of the input data, alarms
         """
         detector = Prospective(
             h=self.__h, encoding_func=self.__encoding_func, complexity_func=self.__complexity_func)
@@ -52,24 +58,46 @@ class Retrospective:
         scores_2 = []
 
         for i, X_i in enumerate(X):
-            score_0, score_1, score_2 = detector.update(X_i)
+            scores = detector.update(X_i)
             if i >= self.__h:
-                scores_0.append(score_0)
-                scores_1.append(score_1)
-                scores_2.append(score_2)
+                scores_0.append(scores[0])
+                scores_1.append(scores[1])
+                scores_2.append(scores[2])
 
         scores_0 = scores_0 + [np.nan] * self.__h
         scores_1 = scores_1 + [np.nan] * self.__h
         scores_2 = scores_2 + [np.nan] * self.__h
 
+        inf = 1e10
+        alarms_0 = np.where(np.nan_to_num(
+            scores[0], nan=-inf) >= self.__threshold_0, 1, 0)
+        alarms_1 = np.where(np.nan_to_num(
+            scores[1], nan=-inf) >= self.__threshold_1, 1, 0)
+        alarms_2 = np.where(np.nan_to_num(
+            scores[2], nan=-inf) >= self.__threshold_2, 1, 0)
+
+        return [np.array(scores_0), np.array(scores_1), np.array(scores_2)], [alarms_0, alarms_1, alarms_2]
+
+    def calc_scores(self, X):
+        """
+        calculate scores
+
+        Args:
+            X: input data
+
+        Returns:
+            Union[ndarray, list]: scores of the input data
+        """
+        scores, _ = self.calc_all_stats(X)
+
         if self.__order == 0:
-            return np.array(scores_0)
+            return np.array(scores[0])
         elif self.__order == 1:
-            return np.array(scores_1)
+            return np.array(scores[1])
         elif self.__order == 2:
-            return np.array(scores_2)
+            return np.array(scores[2])
         else:
-            return [np.array(scores_0), np.array(scores_1), np.array(scores_2)]
+            return scores
 
     def make_alarms(self, X):
         """
@@ -81,19 +109,31 @@ class Retrospective:
         Returns:
             Union[ndarray, list]: indice of alarms
         """
-        scores_0, scores_1, scores_2 = self.calc_scores(X)
-        alarms_0 = np.where(scores_0 >= self.__threshold_0, 1, 0)
-        alarms_1 = np.where(scores_1 >= self.__threshold_1, 1, 0)
-        alarms_2 = np.where(scores_2 >= self.__threshold_2, 1, 0)
+        _, alarms = self.calc_all_stats(X)
 
         if self.__order == 0:
-            return alarms_0
+            return alarms[0]
         elif self.__order == 1:
-            return alarms_1
+            return alarms[1]
         elif self.__order == 2:
-            return alarms_2
+            return alarms[2]
         else:
-            return [alarms_0, alarms_1, alarms_2]
+            return alarms
+
+    def calc_prob(self, X):
+        """
+        calculate the change probability
+
+        Args:
+            X: input data
+
+        Returns:
+            ndarray: change probability
+        """
+        scores, _ = self.calc_all_stats(X)
+        prob = 1 / (1 + np.exp(-self.__beta * scores[0]))
+
+        return prob
 
 
 class Prospective:
@@ -153,4 +193,4 @@ class Prospective:
                 ((stat_nochange - stat_t) - (stat_nochange - stat_tm))
             self.__stacked_data = np.delete(self.__stacked_data, obj=0, axis=0)
 
-            return score_0, score_1, score_2
+            return [score_0, score_1, score_2]
