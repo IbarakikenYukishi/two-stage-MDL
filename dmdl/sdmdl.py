@@ -34,8 +34,8 @@ class Retrospective:
         self.__order = order
 
         # beta for calculation of the change probability
-        self.__beta = (np.log(1 - self.__delta_0) - np.log(self.__delta_0)) / \
-            (self.__complexity_func(2 * self.__h) - np.log(self.__delta_0))
+        self.__beta = (np.log(1 - delta_0) - np.log(delta_0)) / \
+            (self.__complexity_func(2 * self.__h) - np.log(delta_0))
 
     def calc_all_stats(self, X):
         """
