@@ -1,7 +1,8 @@
 import sys
 sys.path.append('./')
 import numpy as np
-import optuna
+import matplotlib.pyplot as plt
+import os
 import changefinder
 import bocpd
 import dmdl.sdmdl as sdmdl
@@ -13,9 +14,10 @@ import utils.hsdmdl2_nml as hsdmdl2_nml
 from copy import deepcopy
 from functools import partial
 from multiprocessing import Pool
-from utils.utils import Gradual_step, mean_changing, variance_changing, create_dataset, calc_AUC
+from utils.utils import Gradual_step, calc_AUC
 
 # TODO: docstring
+
 
 def one_mean_changing(transition_period):
     """
@@ -37,11 +39,33 @@ def one_mean_changing(transition_period):
     return data, changepoints
 
 
-def _calc_metrics(data, changepoints, tolerance_delay, retrospective):
+def _calc_metrics_draw_figure(name, data, changepoints, tolerance_delay, retrospective):
+    # Calculation of AUC
+    print(name)
     _retrospective = deepcopy(retrospective)
     scores = _retrospective.calc_scores(data)
     AUC = calc_AUC(scores, changepoints, tolerance_delay, both=False)
-    return AUC
+    print("AUC: ", AUC)
+
+    # Draw a figure
+    output_path = "./figs/"
+    os.makedirs(output_path, exist_ok=True)
+    fontsize = 18
+    plt.clf()
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(20, 10))
+
+    axes[0].plot(data, label="Raw Data")
+    axes[0].set_ylabel('Value', fontsize=fontsize)
+    axes[0].set_ylim(np.nanmin(data) - 5, np.nanmax(data) + 5)
+    axes[0].legend(loc='upper left', fontsize=fontsize)
+
+    axes[1].plot(scores, label=name, color="blue")
+    axes[1].set_ylabel('Score', fontsize=fontsize)
+    axes[1].legend(loc='upper left', fontsize=fontsize)
+    axes[1].set_ylim(np.nanmin(scores), np.nanmax(scores))
+
+    plt.subplots_adjust(left=0.1, right=0.95, bottom=0.1, top=0.95)
+    fig.savefig(output_path + name + ".png")
 
 
 def main():
@@ -51,131 +75,89 @@ def main():
     transition_period = 200
     data, changepoints = one_mean_changing(transition_period=transition_period)
 
-    print("ChangeFinder")
+    name = "ChangeFinder"
     retrospective = changefinder.Retrospective(r=0.1, order=5, smooth=5)
-    AUC = _calc_metrics(
-        data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("BOCPD")
-    lam = 1000
-    alpha = 0.5
-    beta = 5
-    kappa = 5
-    mu = 0
-    h = partial(bocpd.constant_hazard, lam)
-    lik = bocpd.StudentT(alpha, beta, kappa, mu)
+    name = "BOCPD"
+    h = partial(bocpd.constant_hazard, 1000)
+    lik = bocpd.StudentT(0.5, 5, 5, 0)
     retrospective = bocpd.Retrospective(hazard_func=h, likelihood_func=lik)
-    AUC = _calc_metrics(
-        data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("SDMDL 0th")
+    name = "SDMDL_0th"
     nml_gaussian = partial(sdmdl_nml.nml_gaussian, mu_max=1e8,
                            div_min=1e-8, div_max=1e8)
     complexity_gaussian = partial(sdmdl_nml.complexity_gaussian, mu_max=1e8,
                                   div_min=1e-8, div_max=1e8)
     retrospective = sdmdl.Retrospective(h=100, encoding_func=nml_gaussian,
                                         complexity_func=complexity_gaussian, order=0)
-    AUC = _calc_metrics(
-        data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("SDMDL 1st")
+    name = "SDMDL_1st"
     nml_gaussian = partial(sdmdl_nml.nml_gaussian, mu_max=1e8,
                            div_min=1e-8, div_max=1e8)
     complexity_gaussian = partial(sdmdl_nml.complexity_gaussian, mu_max=1e8,
                                   div_min=1e-8, div_max=1e8)
     retrospective = sdmdl.Retrospective(h=100, encoding_func=nml_gaussian,
                                         complexity_func=complexity_gaussian, order=1)
-    AUC = _calc_metrics(
-        data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("SDMDL 2nd")
+    name = "SDMDL_2nd"
     nml_gaussian = partial(sdmdl_nml.nml_gaussian, mu_max=1e8,
                            div_min=1e-8, div_max=1e8)
     complexity_gaussian = partial(sdmdl_nml.complexity_gaussian, mu_max=1e8,
                                   div_min=1e-8, div_max=1e8)
     retrospective = sdmdl.Retrospective(h=100, encoding_func=nml_gaussian,
                                         complexity_func=complexity_gaussian, order=2)
-    AUC = _calc_metrics(
-        data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("Hierarchical_SCAW1 0th")
+    name = "Hierarchical_SCAW1_0th"
     lnml_gaussian = partial(hsdmdl1_nml.lnml_gaussian)
-    order=0
-    min_datapoints = 5
-    delta_0 =0.05
-    delta_1 = 0.05
-    delta_2 = 0.05
-    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=min_datapoints, delta_0=delta_0,
-                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
-    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=5, delta_0=0.05,
+                                          delta_1=0.05, delta_2=0.05, how_to_drop='all', order=0, reliability=True)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("Hierarchical_SCAW1 1st")
+    name = "Hierarchical_SCAW1_1st"
     lnml_gaussian = partial(hsdmdl1_nml.lnml_gaussian)
-    order=1
-    min_datapoints = 5
-    delta_0 =0.05
-    delta_1 = 0.05
-    delta_2 = 0.05
-    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=min_datapoints, delta_0=delta_0,
-                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
-    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=5, delta_0=0.05,
+                                          delta_1=0.05, delta_2=0.05, how_to_drop='all', order=1, reliability=True)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("Hierarchical_SCAW1 2nd")
+    name = "Hierarchical_SCAW1_2nd"
     lnml_gaussian = partial(hsdmdl1_nml.lnml_gaussian)
-    order=2
-    min_datapoints = 5
-    delta_0 =0.05
-    delta_1 = 0.05
-    delta_2 = 0.05
-    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=min_datapoints, delta_0=delta_0,
-                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
-    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    retrospective = hsdmdl1.Retrospective(encoding_func=lnml_gaussian, d=2, min_datapoints=5, delta_0=0.05,
+                                          delta_1=0.05, delta_2=0.05, how_to_drop='all', order=2, reliability=True)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("Hierarchical_SCAW2 0th")
+    name = "Hierarchical_SCAW2_0th"
     nml_gaussian = partial(hsdmdl2_nml.nml_gaussian)
-    order=0
-    min_datapoints = 5
-    delta_0 =0.05
-    delta_1 = 0.05
-    delta_2 = 0.05
-    retrospective = hsdmdl2.Retrospective(encoding_func=nml_gaussian, d=2, M=5, min_datapoints=min_datapoints, delta_0=delta_0,
-                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
-    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    retrospective = hsdmdl2.Retrospective(encoding_func=nml_gaussian, d=2, M=5, min_datapoints=5, delta_0=0.05,
+                                          delta_1=0.05, delta_2=0.05, how_to_drop='all', order=0, reliability=True)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("Hierarchical_SCAW2 1st")
+    name = "Hierarchical_SCAW2_1st"
     nml_gaussian = partial(hsdmdl2_nml.nml_gaussian)
-    order=1
-    min_datapoints = 5
-    delta_0 =0.05
-    delta_1 = 0.05
-    delta_2 = 0.05
-    retrospective = hsdmdl2.Retrospective(encoding_func=nml_gaussian, d=2, M=5, min_datapoints=min_datapoints, delta_0=delta_0,
-                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
-    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
+    retrospective = hsdmdl2.Retrospective(encoding_func=nml_gaussian, d=2, M=5, min_datapoints=5, delta_0=0.05,
+                                          delta_1=0.05, delta_2=0.05, how_to_drop='all', order=1, reliability=True)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
-    print("Hierarchical_SCAW2 2nd")
+    name = "Hierarchical_SCAW2_2nd"
     nml_gaussian = partial(hsdmdl2_nml.nml_gaussian)
-    order=2
-    min_datapoints = 5
-    delta_0 =0.05
-    delta_1 = 0.05
-    delta_2 = 0.05
-    retrospective = hsdmdl2.Retrospective(encoding_func=nml_gaussian, d=2, M=5, min_datapoints=min_datapoints, delta_0=delta_0,
-                        delta_1=delta_1, delta_2=delta_2, how_to_drop='all', order=order, reliability=True)
-    AUC = _calc_metrics(data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
-    print("AUC: ", AUC)
-
-
+    retrospective = hsdmdl2.Retrospective(encoding_func=nml_gaussian, d=2, M=5, min_datapoints=5, delta_0=0.05,
+                                          delta_1=0.05, delta_2=0.05, how_to_drop='all', order=2, reliability=True)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
 
 if __name__ == "__main__":
     main()
