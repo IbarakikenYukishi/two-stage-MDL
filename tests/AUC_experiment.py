@@ -285,11 +285,9 @@ def main():
     n_trials = 100
     n_samples = 20
     tolerance_delay = 100
-    #transition_periods = [0, 100, 200, 300, 400]
-    transition_periods = [100]
-    # func_names = [(variance_changing, "variance_changing"),
-    #              (mean_changing, "mean_changing")]
-    func_names = [(variance_changing, "variance_changing")]
+    transition_periods = [0, 100, 200, 300, 400]
+    func_names = [(variance_changing, "variance_changing"),
+                  (mean_changing, "mean_changing")]
 
     df_results = pd.DataFrame()
 
