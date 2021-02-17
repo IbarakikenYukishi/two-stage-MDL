@@ -92,6 +92,10 @@ class Retrospective:
                 self.__threshold_2
             ).astype(int)
 
+        alarms_0 = np.where(alarms_0 == 1)[0]
+        alarms_1 = np.where(alarms_1 == 1)[0]
+        alarms_2 = np.where(alarms_2 == 1)[0]
+
         return [np.array(scores_0), np.array(scores_1), np.array(scores_2)], [alarms_0, alarms_1, alarms_2]
 
     def calc_scores(self, X):

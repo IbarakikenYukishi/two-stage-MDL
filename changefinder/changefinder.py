@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 import scipy as sp
 
@@ -155,6 +154,8 @@ class Retrospective():
                 scores,
                 self.__threshold
             ).astype(int)
+
+        alarms = np.where(alarms == 1)[0]
 
         return alarms
 

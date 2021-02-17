@@ -112,6 +112,8 @@ class Retrospective:
                 self.__threshold
             ).astype(int)
 
+        alarms = np.where(alarms == 1)[0]
+
         return alarms
 
 
