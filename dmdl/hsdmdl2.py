@@ -158,7 +158,7 @@ class Retrospective:
             X: input data
 
         Returns:
-            Union[ndarray, list]: binarized scores
+            Union[ndarray, list]: indice of alarms
         """
         alarms, _, _, _ = self.calc_all_stats(X)
         if self.__order != -1:

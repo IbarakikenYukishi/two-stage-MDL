@@ -38,6 +38,13 @@ class Retrospective:
             (self.__complexity_func(2 * self.__h) - np.log(delta_0))
 
     @property
+    def threshold_0(self):
+        """
+        float: threshold
+        """
+        return self.__threshold_0
+
+    @property
     def h(self):
         """
         int: window size

@@ -21,6 +21,7 @@ class Retrospective:
 
         self.__h_1 = retrospective_first.h
         self.__h_2 = retrospective_second.h
+        self.__threshold=retrospective_second.threshold_0
         self.__retrospective_first = retrospective_first
         self.__retrospective_second = retrospective_second
 
@@ -79,6 +80,15 @@ class Retrospective:
         Returns:
             ndarray: indice of alarms
         """
-        alarms = self.__retrospective_second.make_alarms(X)
+        scores = self.calc_scores(X)
+
+        # ignore warnings made by np.nan
+        with np.errstate(invalid='ignore'):
+            alarms = np.greater(
+                scores,
+                self.__threshold
+            ).astype(int)
+
+        alarms = np.where(alarms == 1)[0]
 
         return alarms

@@ -101,7 +101,7 @@ class Retrospective:
             X: input data
 
         Returns:
-            ndarray: binarized scores
+            ndarray: indice of alarms
         """
         scores = self.calc_scores(X)
 
