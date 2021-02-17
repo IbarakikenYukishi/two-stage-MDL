@@ -92,7 +92,7 @@ def create_dataset(n_samples, func, transition_period):
     return np.array(dataset), changepoints
 
 
-def calc_AUC(scores, changepoints, tolerance_delay, div=100, both=True):
+def calc_AUC(scores, changepoints, tolerance_delay, div=500, both=True):
     """
     calculate the area under the curve (AUC) from scores and given changepoints.
 
@@ -149,7 +149,7 @@ def calc_AUC(scores, changepoints, tolerance_delay, div=100, both=True):
 
     return AUC
 
-def calc_F1(scores, changepoints, T, tuned_threshold=None, div=1000, both=True):
+def calc_F1_score(scores, changepoints, T, tuned_threshold=None, div=1000, both=True):
     # TODO: 修正する
     # tuned_thresholdがNoneのときは閾値のチューニングを、
     # そうでないときは与えられた閾値によるF値を計算する。
