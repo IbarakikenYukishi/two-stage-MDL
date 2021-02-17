@@ -8,6 +8,8 @@ import bocpd
 import dmdl.sdmdl as sdmdl
 import dmdl.hsdmdl1 as hsdmdl1
 import dmdl.hsdmdl2 as hsdmdl2
+import tsmdl.fw2s_mdl as fw2s_mdl
+import tsmdl.aw2s_mdl as aw2s_mdl
 import utils.sdmdl_nml as sdmdl_nml
 import utils.hsdmdl1_nml as hsdmdl1_nml
 import utils.hsdmdl2_nml as hsdmdl2_nml
@@ -44,7 +46,7 @@ def _calc_metrics_draw_figure(name, data, changepoints, tolerance_delay, retrosp
     print(name)
     _retrospective = deepcopy(retrospective)
     scores = _retrospective.calc_scores(data)
-    AUC = calc_AUC(scores, changepoints, tolerance_delay, both=False)
+    AUC = calc_AUC(scores, changepoints, tolerance_delay, both=True)
     print("AUC: ", AUC)
 
     # Draw a figure
@@ -158,6 +160,41 @@ def main():
                                           delta_1=0.05, delta_2=0.05, how_to_drop='all', order=2, reliability=True)
     _calc_metrics_draw_figure(
         name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
+
+    name = "FW2S_MDL"
+    nml_gaussian = partial(sdmdl_nml.nml_gaussian, mu_max=1e8,
+                           div_min=1e-8, div_max=1e8)
+    complexity_gaussian = partial(sdmdl_nml.complexity_gaussian, mu_max=1e8,
+                                  div_min=1e-8, div_max=1e8)
+    retrospective_first = sdmdl.Retrospective(h=100, encoding_func=nml_gaussian,
+                                              complexity_func=complexity_gaussian, order=0)
+    nml_gaussian = partial(sdmdl_nml.nml_gaussian, mu_max=1e8,
+                           div_min=1e-8, div_max=1e8)
+    complexity_gaussian = partial(sdmdl_nml.complexity_gaussian, mu_max=1e8,
+                                  div_min=1e-8, div_max=1e8)
+    retrospective_second = sdmdl.Retrospective(h=100, encoding_func=nml_gaussian,
+                                               complexity_func=complexity_gaussian, order=0)
+    retrospective = fw2s_mdl.Retrospective(
+        retrospective_first, retrospective_second)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
+
+    name = "AW2S_MDL"
+    nml_gaussian = partial(sdmdl_nml.nml_gaussian, mu_max=1e8,
+                           div_min=1e-8, div_max=1e8)
+    complexity_gaussian = partial(sdmdl_nml.complexity_gaussian, mu_max=1e8,
+                                  div_min=1e-8, div_max=1e8)
+    retrospective_first = sdmdl.Retrospective(h=100, encoding_func=nml_gaussian,
+                                              complexity_func=complexity_gaussian, order=0)
+    lnml_gaussian = partial(hsdmdl2_nml.lnml_gaussian, sigma_given=0.3)
+    retrospective_second = hsdmdl2.Retrospective(encoding_func=lnml_gaussian, d=2, M=5, min_datapoints=5, delta_0=0.05,
+                                                 delta_1=0.05, delta_2=0.05, how_to_drop='all', order=0, reliability=True)
+
+    retrospective = aw2s_mdl.Retrospective(
+        retrospective_first, retrospective_second)
+    _calc_metrics_draw_figure(
+        name, data, changepoints, tolerance_delay=tolerance_delay, retrospective=retrospective)
+
 
 if __name__ == "__main__":
     main()
