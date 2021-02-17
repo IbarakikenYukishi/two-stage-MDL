@@ -24,7 +24,6 @@ def Gradual_step(x, transition_period=300):
         return 1.0
 
 
-
 def mean_changing(transition_period):
     """
     return a mean-changing data sequence and the corresponding changepoints
@@ -39,9 +38,11 @@ def mean_changing(transition_period):
     data = np.random.normal(0, 1, 10000)
     for t in range(10000):
         for i in range(1, 10):
-            data[t] += 0.6 * (10 - i) * Gradual_step(t - 1000 * i, transition_period=transition_period)
+            data[t] += 0.6 * (10 - i) * Gradual_step(t -
+                                                     1000 * i, transition_period=transition_period)
 
-    changepoints = np.array([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000])
+    changepoints = np.array(
+        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000])
     return data, changepoints
 
 
@@ -60,11 +61,13 @@ def variance_changing(transition_period):
     for t in range(10000):
         val = 0
         for i in range(1, 10):
-            val += 0.3 * (10 - i) * Gradual_step(t - 1000 * i, transition_period=transition_period)
+            val += 0.3 * (10 - i) * Gradual_step(t - 1000 * i,
+                                                 transition_period=transition_period)
         val = np.exp(val)
         data[t] = np.random.normal(0, val)
 
-    changepoints = np.array([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000])
+    changepoints = np.array(
+        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000])
     return data, changepoints
 
 
@@ -112,26 +115,30 @@ def calc_AUC(scores, changepoints, tolerance_delay, div=500, both=True):
     score_min = np.nanmin(scores)
     _scores = np.nan_to_num(scores, nan=score_min)
 
-    benefit_sequence = np.zeros(len(scores))
-    false_alarm_sequence = np.ones(len(scores))
+    benefit_sequence = np.zeros(len(_scores))
+    false_alarm_sequence = np.ones(len(_scores))
     benefits = []
     false_alarms = []
 
     # benefitとfalse_alarmを計算する用の列を作成
     for changepoint in changepoints:
         if both:
-            false_alarm_sequence[changepoint - tolerance_delay:changepoint + tolerance_delay + 1] = 0
+            false_alarm_sequence[
+                changepoint - tolerance_delay:changepoint + tolerance_delay + 1] = 0
             for j in range(changepoint - tolerance_delay, changepoint + tolerance_delay + 1):
-                benefit_sequence[j] = max(1 - np.abs(j - changepoint) / tolerance_delay, benefit_sequence[j])
+                benefit_sequence[j] = max(
+                    1 - np.abs(j - changepoint) / tolerance_delay, benefit_sequence[j])
         else:
-            false_alarm_sequence[changepoint:changepoint + tolerance_delay + 1] = 0
+            false_alarm_sequence[
+                changepoint:changepoint + tolerance_delay + 1] = 0
             for j in range(changepoint, changepoint + tolerance_delay + 1):
-                benefit_sequence[j] = max(1 - np.abs(j - changepoint) / tolerance_delay, benefit_sequence[j])            
+                benefit_sequence[j] = max(
+                    1 - np.abs(j - changepoint) / tolerance_delay, benefit_sequence[j])
 
     # calculate benefits and false alarms with thresholds
     for i in range(div + 1):
         threshold = score_min + i * (score_max - score_min) / div
-        alarms= np.where(_scores >= threshold, 1, 0)
+        alarms = np.where(_scores >= threshold, 1, 0)
         benefits.append(alarms.dot(benefit_sequence))
         false_alarms.append(alarms.dot(false_alarm_sequence))
 
@@ -139,7 +146,7 @@ def calc_AUC(scores, changepoints, tolerance_delay, div=500, both=True):
     benefits = np.array(benefits)
     false_alarms = np.array(false_alarms)
     benefits /= np.max(benefits)
-    false_alarm_rates = false_alarms/ np.max(false_alarms)
+    false_alarm_rates = false_alarms / np.max(false_alarms)
 
     # calculate AUC by numerical integration
     AUC = 0
@@ -149,39 +156,56 @@ def calc_AUC(scores, changepoints, tolerance_delay, div=500, both=True):
 
     return AUC
 
-def calc_F1_score(scores, changepoints, T, tuned_threshold=None, div=1000, both=True):
-    # TODO: 修正する
-    # tuned_thresholdがNoneのときは閾値のチューニングを、
-    # そうでないときは与えられた閾値によるF値を計算する。
+
+def calc_F1_score(scores, changepoints, tolerance_delay, tuned_threshold=None, div=500, both=True):
+    """
+    Calculate F1 score. If tuned_threshold is None, return the tuned threshold.
+
+    Args:
+        scores: the change scores or change sign scores
+        changepoints: changepoints or starting points of gradual changes
+        tolerance_delay: tolerance delay for change or change sign detection
+        tuned_threshold: the tuned threshold. If it is None, tune the threshold and 
+        return metrics with it.
+        div: sampling points for calculating the AUC
+        both: how to define the section of benefits
+
+    Returns:
+        float, float, float, Optional[float]: F1 score, precision, recall, tuned threshold
+
+    """
+
+    # basic statistics
+    score_max = np.nanmax(scores)
+    score_min = np.nanmin(scores)
+    _scores = np.nan_to_num(scores, nan=score_min)  # fill nan
+
     if tuned_threshold == None:
-        score_max = np.max(scores)
-        score_min = np.min(scores)
-        max_F_value = 0
-        max_precision = 0  # 最大のprecisionというよりもむしろF値を最大たらしめるprecision
-        max_recall = 0  # 最小のrecallというよりもむしろF値を最大たらしめるrecall
+
+
+        # statistics
+        max_F1_score = 0
+        max_precision = 0  # the precision it achieves maximum F1 score
+        max_recall = 0  # the recall it achieves maximum F1 score
         opt_threshold = 0
 
-        F_value_hist = np.zeros(div)
-        precision_hist = np.zeros(div)
-        recall_hist = np.zeros(div)
-        threshold_hist = np.zeros(div)
+        # statistics list
+        F1_scores = np.zeros(div)
+        precisions = np.zeros(div)
+        recalls = np.zeros(div)
+        thresholds = np.zeros(div)
 
         for i in range(div):
             threshold = score_min + i * (score_max - score_min) / (div - 1)
-            a = np.where(scores >= threshold, 1, 0)
-            a[0] = 0
-            a[-1] = 0
+            alarms = np.where(_scores >= threshold, 1, 0)
+            alarms[0] = 0
+            alarms[-1] = 0
 
-            diff = np.diff(a)
-            # estimated_changepoints_prev = np.where(
-            #    diff == 1)[0]  # change-points
-
+            diff = np.diff(alarms)
             estimated_changepoints_prev = []
 
             start = np.where(diff == 1)[0]
             end = np.where(diff == -1)[0]
-            # print(start)
-            # print(end)
 
             for j in range(start.size):
                 s = start[j]
@@ -193,17 +217,17 @@ def calc_F1_score(scores, changepoints, T, tuned_threshold=None, div=1000, both=
             estimated_changepoints_prev = np.array(estimated_changepoints_prev)
 
             TP = 0
-
             for c in changepoints:
                 if both == True:
-                    estimated_changepoints = np.where((estimated_changepoints_prev >= c - T) & (estimated_changepoints_prev <= c + T),
+                    estimated_changepoints = np.where((estimated_changepoints_prev >= c - tolerance_delay) & (estimated_changepoints_prev <= c + tolerance_delay),
                                                       -1, estimated_changepoints_prev)
                 elif both == False:
-                    estimated_changepoints = np.where((estimated_changepoints_prev >= c) & (estimated_changepoints_prev <= c + T),
+                    estimated_changepoints = np.where((estimated_changepoints_prev >= c) & (estimated_changepoints_prev <= c + tolerance_delay),
                                                       -1, estimated_changepoints_prev)
 
                 if not (estimated_changepoints == estimated_changepoints_prev).all():
                     TP += 1
+
                 estimated_changepoints_prev = np.copy(estimated_changepoints)
 
             FP = len(changepoints) - TP
@@ -213,52 +237,49 @@ def calc_F1_score(scores, changepoints, T, tuned_threshold=None, div=1000, both=
                 precision = 0
             else:
                 precision = TP / (TP + FP)
+
             if TP == 0 and FN == 0:
                 recall = 0
             else:
                 recall = TP / (TP + FN)
 
             if precision == 0 and recall == 0:
-                F_value = 0
+                F1_score = 0
             else:
-                F_value = 2 * precision * recall / (precision + recall)
+                F1_score = 2 * precision * recall / (precision + recall)
 
-            F_value_hist[i] = F_value
-            precision_hist[i] = precision
-            recall_hist[i] = recall
-            threshold_hist[i] = threshold
+            F1_scores[i] = F1_score
+            precisions[i] = precision
+            recalls[i] = recall
+            thresholds[i] = threshold
 
-#            if max_F_value < F_value:
-#                max_F_value = F_value
-#                max_precision = precision
-#                max_recall = recall
-#                opt_threshold = threshold
+        max_F1_score = np.max(F1_scores)
+        idx = np.where(F1_scores == max_F1_score)[0]
+        middle_idx = int(np.mean(idx))
+        max_precision = precisions[middle_idx]
+        max_recall = recalls[middle_idx]
+        opt_threshold = thresholds[middle_idx]
 
-        max_F_value = np.max(F_value_hist)
-        ind = np.where(F_value_hist == max_F_value)[0]
-        middle_ind = int(np.mean(ind))
-        max_precision = precision_hist[middle_ind]
-        max_recall = recall_hist[middle_ind]
-        opt_threshold = threshold_hist[middle_ind]
-
-        return max_F_value, max_precision, max_recall, opt_threshold
+        return max_F1_score, max_precision, max_recall, opt_threshold
     else:
-        a = np.where(scores >= tuned_threshold, 1, 0)
+        alarms = np.where(_scores >= tuned_threshold, 1, 0)
 
-        diff = np.diff(a)
+        diff = np.diff(alarms)
         estimated_changepoints_prev = np.where(diff == 1)[0]  # change-points
         TP = 0
 
         for c in changepoints:
             if both == True:
-                estimated_changepoints = np.where((estimated_changepoints_prev >= c - T) & (estimated_changepoints_prev <= c + T),
+                estimated_changepoints = np.where((estimated_changepoints_prev >= c - tolerance_delay) & (estimated_changepoints_prev <= c + tolerance_delay),
                                                   -1, estimated_changepoints_prev)
+
             elif both == False:
-                estimated_changepoints = np.where((estimated_changepoints_prev >= c) & (estimated_changepoints_prev <= c + T),
+                estimated_changepoints = np.where((estimated_changepoints_prev >= c) & (estimated_changepoints_prev <= c + tolerance_delay),
                                                   -1, estimated_changepoints_prev)
 
             if not (estimated_changepoints == estimated_changepoints_prev).all():
                 TP += 1
+
             estimated_changepoints_prev = np.copy(estimated_changepoints)
 
         FP = len(changepoints) - TP
@@ -268,25 +289,15 @@ def calc_F1_score(scores, changepoints, T, tuned_threshold=None, div=1000, both=
             precision = 0
         else:
             precision = TP / (TP + FP)
+
         if TP == 0 and FN == 0:
             recall = 0
         else:
             recall = TP / (TP + FN)
 
         if precision == 0 and recall == 0:
-            F_value = 0
+            F1_score = 0
         else:
-            F_value = 2 * precision * recall / (precision + recall)
+            F1_score = 2 * precision * recall / (precision + recall)
 
-        return F_value, precision, recall
-
-def DJ(X):
-    diff = np.zeros(X.shape[0])
-    for i, x in enumerate(X):
-        if i == 0 or i == X.shape[0] - 1:
-            diff[i] = 1
-        else:
-            diff[i] = X[i + 1] / X[i]
-    diff -= 1
-    return diff
-
+        return F1_score, precision, recall
