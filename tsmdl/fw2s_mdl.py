@@ -46,21 +46,21 @@ class Retrospective:
         eps = 1e-12
         probs = self.__retrospective_first.calc_prob(X)
         probs = probs[self.__h_1 - 1: n - self.__h_1]
-        prob_lengths = np.where(probs < eps, eps, probs)
-        prob_lengths = [np.nan] * (self.__h_1  - 1) + \
-            list(prob_lengths) + [np.nan] * self.__h_1
-        prob_lengths = np.array(prob_lengths)
+        prob_lengths = -np.log(probs)
+        prob_lengths = np.where(prob_lengths < eps, eps, prob_lengths)
+        prob_lengths = np.array(
+            [np.nan] * (self.__h_1 - 1) + list(prob_lengths) + [np.nan] * self.__h_1)
 
-        # growth rate
+        # growth rates
         growth_rates = np.zeros(n - 2 * self.__h_1)
         for i in range(self.__h_1, n - self.__h_1):
             growth_rates[i - self.__h_1] = prob_lengths[i] / \
                 prob_lengths[i - 1] - 1
 
+        probs = np.array([np.nan] * (self.__h_1  - 1) + list(probs) + [np.nan] * self.__h_1)
         # 2nd stage scores
         scores = self.__retrospective_second.calc_scores(growth_rates)
-        scores = [np.nan] * self.__h_1 + list(scores) + [np.nan] * self.__h_1
-        scores = np.array(scores)
+        scores = np.array([np.nan] * self.__h_1 + list(scores) + [np.nan] * self.__h_1)
 
         # set np.nan if the probability decreases
         for j in range(self.__h_1 + self.__h_2 - 1, n - self.__h_1 - self.__h_2):
