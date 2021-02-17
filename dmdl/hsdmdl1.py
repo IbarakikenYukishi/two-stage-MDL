@@ -99,7 +99,33 @@ class Retrospective:
             cutpoints_2.append(cutpoints[2])
             window_sizes.append(window_size)
 
-        return [np.array(alarms_0), np.array(alarms_1), np.array(alarms_2)], [np.array(max_scores_0), np.array(max_scores_1), np.array(max_scores_2)], [np.array(cutpoints_0), np.array(cutpoints_1), np.array(cutpoints_2)], np.array(window_sizes)
+        cutpoints_0 = np.array(cutpoints_0)
+        cutpoints_1 = np.array(cutpoints_1)
+        cutpoints_2 = np.array(cutpoints_2)
+
+        alarms_0 = np.array(alarms_0)
+        alarms_1 = np.array(alarms_1)
+        alarms_2 = np.array(alarms_2)
+
+        cutpoints_0 = cutpoints_0[~np.isnan(cutpoints_0)]
+        cutpoints_1 = cutpoints_1[~np.isnan(cutpoints_1)]
+        cutpoints_2 = cutpoints_2[~np.isnan(cutpoints_2)]
+
+        alarms_0 = np.where(alarms_0 > 0.5)[0]
+        alarms_1 = np.where(alarms_1 > 0.5)[0]
+        alarms_2 = np.where(alarms_2 > 0.5)[0]
+
+        for i in range(len(alarms_0)):
+            if i != 0:
+                cutpoints_0[i] += alarms_0[i - 1]
+        for i in range(len(alarms_1)):
+            if i != 0:
+                cutpoints_1[i] += alarms_1[i - 1]
+        for i in range(len(alarms_2)):
+            if i != 0:
+                cutpoints_2[i] += alarms_2[i - 1]
+
+        return [alarms_0, alarms_1, alarms_2], [np.array(max_scores_0), np.array(max_scores_1), np.array(max_scores_2)], [cutpoints_0, cutpoints_1, cutpoints_2], np.array(window_sizes)
 
     def calc_scores(self, X):
         """
@@ -312,7 +338,7 @@ class Prospective:
         stats_2[:] = np.nan
 
         Xmat = np.array(list(map((lambda x: x[0]), self.__window)))
-        Xmat=Xmat.reshape((1 ,-1))
+        Xmat = Xmat.reshape((1, -1))
         Xmat = np.matrix(Xmat)
 
         n, m = Xmat.shape
@@ -353,7 +379,8 @@ class Prospective:
             stats_1[cut - 1] = stats_0[cut - 1] - stats_0[cut - 2]
 
         for cut in range(start_2, end_2 + 1):
-            stats_2[cut - 1] = (stats_0[cut] - stats_0[cut - 1]) - (stats_0[cut - 1] - stats_0[cut - 2])
+            stats_2[cut - 1] = (stats_0[cut] - stats_0[cut - 1]) - \
+                (stats_0[cut - 1] - stats_0[cut - 2])
 
         return stats_0, stats_1, stats_2
 

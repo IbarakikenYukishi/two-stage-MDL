@@ -104,7 +104,33 @@ class Retrospective:
             cutpoints_2.append(cutpoints[2])
             window_sizes.append(window_size)
 
-        return [np.array(alarms_0), np.array(alarms_1), np.array(alarms_2)], [np.array(max_scores_0), np.array(max_scores_1), np.array(max_scores_2)], [np.array(cutpoints_0), np.array(cutpoints_1), np.array(cutpoints_2)], np.array(window_sizes)
+        cutpoints_0 = np.array(cutpoints_0)
+        cutpoints_1 = np.array(cutpoints_1)
+        cutpoints_2 = np.array(cutpoints_2)
+
+        alarms_0 = np.array(alarms_0)
+        alarms_1 = np.array(alarms_1)
+        alarms_2 = np.array(alarms_2)
+
+        cutpoints_0 = cutpoints_0[~np.isnan(cutpoints_0)]
+        cutpoints_1 = cutpoints_1[~np.isnan(cutpoints_1)]
+        cutpoints_2 = cutpoints_2[~np.isnan(cutpoints_2)]
+
+        alarms_0 = np.where(alarms_0 > 0.5)[0]
+        alarms_1 = np.where(alarms_1 > 0.5)[0]
+        alarms_2 = np.where(alarms_2 > 0.5)[0]
+
+        for i in range(len(alarms_0)):
+            if i != 0:
+                cutpoints_0[i] += alarms_0[i - 1]
+        for i in range(len(alarms_1)):
+            if i != 0:
+                cutpoints_1[i] += alarms_1[i - 1]
+        for i in range(len(alarms_2)):
+            if i != 0:
+                cutpoints_2[i] += alarms_2[i - 1]
+
+        return [alarms_0, alarms_1, alarms_2], [np.array(max_scores_0), np.array(max_scores_1), np.array(max_scores_2)], [cutpoints_0, cutpoints_1, cutpoints_2], np.array(window_sizes)
 
     def calc_scores(self, X):
         """
@@ -425,7 +451,7 @@ class Prospective:
                 former_stat_t = self.__encoding_func(former_t)
                 latter_stat_t = self.__encoding_func(latter_t)
 
-                stat_t=former_stat_t+latter_stat_t
+                stat_t = former_stat_t + latter_stat_t
 
                 stats_0[cut - 1] = entire_stat - stat_t
 
@@ -440,7 +466,7 @@ class Prospective:
                     former_stat_tm = self.__encoding_func(former_tm)
                     latter_stat_tm = self.__encoding_func(latter_tm)
 
-                    stat_tm=former_stat_tm+latter_stat_tm
+                    stat_tm = former_stat_tm + latter_stat_tm
 
                     stats_1[
                         cut - 1] = (entire_stat - stat_t) - (entire_stat - stat_tm)
@@ -454,7 +480,7 @@ class Prospective:
                     former_stat_tp = self.__encoding_func(former_tp)
                     latter_stat_tp = self.__encoding_func(latter_tp)
 
-                    stat_tp=former_stat_tp+latter_stat_tp                    
+                    stat_tp = former_stat_tp + latter_stat_tp
 
                     stats_2[cut - 1] = ((entire_stat - stat_tp) - (entire_stat - stat_t)) - (
                         (entire_stat - stat_t) - (entire_stat - stat_tm))
