@@ -32,12 +32,12 @@ def one_mean_changing(transition_period):
         (ndarray, ndarray): a data sequence, changepoints
     """
 
-    data = np.random.normal(0, 1, 2000)
-    for t in range(2000):
+    data = np.random.normal(0, 1, 1000)
+    for t in range(1000):
         data[t] += 10.0 * \
-            Gradual_step(t - 1000, transition_period=transition_period)
+            Gradual_step(t - 500, transition_period=transition_period)
 
-    changepoints = np.array([1000])
+    changepoints = np.array([500])
     return data, changepoints
 
 
@@ -70,7 +70,7 @@ def _calc_metrics_draw_figure(name, data, changepoints, tolerance_delay, retrosp
     fig.savefig(output_path + name + ".png")
 
 
-def main():
+def test_main():
     np.random.seed(0)
 
     tolerance_delay = 100
@@ -197,4 +197,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_main()
