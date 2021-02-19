@@ -27,7 +27,7 @@ This repository contains the following implementation code of change and change 
 ## 5. License
 This code is licensed under MIT License.
 
-## 7. Reference
+## 6. Reference
 1. Adams, R. P., & MacKay, D. J. (2007). Bayesian online changepoint detection. arXiv preprint arXiv:0710.3742.
 2. Takeuchi, J. I., & Yamanishi, K. (2006). A unifying framework for detecting outliers and change points from time series. IEEE transactions on Knowledge and Data Engineering, 18(4), 482-492.
 3. Yamanishi, K., Xu, L., Yuki, R., Fukushima, S., & Lin, C. H. (2020). Change Sign Detection with Differential MDL Change Statistics and its Applications to COVID-19 Pandemic Analysis. arXiv preprint arXiv:2007.15179.
