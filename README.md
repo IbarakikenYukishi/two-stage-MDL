@@ -19,7 +19,7 @@ This repository contains the following implementation code of change and change 
 
 ## 3. How to Run
 - Run the script at `./experiment/parameter_AUC.py` for the AUC evaluation of each method.
-- Run the jupyter file at `./experiemnt/parameter_F1_score.py` for the F1-score evaluation of each method.
+- Run the script at `./experiemnt/parameter_F1_score.py` for the F1-score evaluation of each method.
 
 ## 4. Author & Mail address
 - Ryo Yuki (jie-cheng-ling@g.ecc.u-tokyo.ac.jp)
