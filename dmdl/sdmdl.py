@@ -1,6 +1,4 @@
 import numpy as np
-import scipy.linalg as sl
-from scipy import special
 
 
 class Retrospective:

@@ -1,9 +1,5 @@
 import numpy as np
-import scipy.linalg as sl
-from scipy import special
 from collections import deque
-import functools as fts
-import operator as op
 
 
 class Retrospective:

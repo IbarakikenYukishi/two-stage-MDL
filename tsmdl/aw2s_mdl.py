@@ -1,8 +1,4 @@
-import sys
-sys.path.append("../")
 import numpy as np
-import scipy.linalg as sl
-from scipy import special
 from copy import deepcopy
 
 
