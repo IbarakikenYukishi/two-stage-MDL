@@ -8,7 +8,7 @@ class Prospective:
     BOCPD (Prospective)
     """
 
-    def __init__(self, hazard_func, likelihood_func):
+    def __init__(self, hazard_func, likelihood_func, eps=1e-4):
         """
         Args:
             hazard_func: hazard function
@@ -16,8 +16,9 @@ class Prospective:
         """
         self.__hazard_func = hazard_func
         self.__likelihood_func = likelihood_func
+        self.__eps = eps
         self.__R_prev = np.ones(1)
-        self.__timestep = 0
+        self.__run_length = 0
 
     def update(self, x):
         """
@@ -32,28 +33,37 @@ class Prospective:
 
         # Evaluate the predictive distribution for the new datum
         predprobs = self.__likelihood_func.pdf(x)
-        self.__timestep += 1
+        self.__run_length = len(self.__R_prev)
 
         # Evaluate the hazard function for this interval
-        H = self.__hazard_func(self.__timestep)
+        H = self.__hazard_func(self.__run_length)
 
         # update the posterior probability of the run lengths
-        R = np.zeros(self.__timestep + 1)
-        R[1:self.__timestep + 1] = self.__R_prev[0:self.__timestep] * \
+        R = np.zeros(self.__run_length + 1)
+        R[1:self.__run_length + 1] = self.__R_prev[0:self.__run_length] * \
             predprobs * (1 - H)
-        R[0] = np.sum(self.__R_prev[0:self.__timestep] * predprobs * H)
+        R[0] = np.sum(self.__R_prev[0:self.__run_length] * predprobs * H)
 
         # Renormalize for the numerical stability.
         R = R / np.sum(R)
 
-        # Update the parameter sets for each possible run length.
-        self.__likelihood_func.update_theta(x)
-        self.__R_prev = R
-
-        # convert the probability of run length into change score
-        score_sequence = np.arange(0, len(self.__R_prev))
+        # Calculate the change score
+        score_sequence = np.arange(0, len(R))
         score_sequence = 1.0 / (1.0 + score_sequence)
-        score = score_sequence.dot(self.__R_prev)
+        score = score_sequence.dot(R)
+
+        # Update the parameter and cut-off the tail of the probability of run lengths
+        # the cumulative probability in the tail is less than self.__eps
+        cum_prob = 0
+        cut_point = 0
+        for i in range(len(R)):
+            cum_prob += R[len(R) - i - 1]
+            if cum_prob > self.__eps:
+                cut_point = len(R) - i
+                break
+
+        self.__R_prev = R[0:cut_point] / np.sum(R[0:cut_point])
+        self.__likelihood_func.update_theta(x, cut_point)
 
         return score
 
@@ -151,7 +161,7 @@ class StudentT():
                           (self.__alpha * self.__kappa))
         )
 
-    def update_theta(self, x):
+    def update_theta(self, x, cut_point):
         """
         update inner parameters
 
@@ -167,10 +177,10 @@ class StudentT():
                                            (x - self.__mu)**2) / (2. * (self.__kappa + 1.)))
         )
 
-        self.__mu = mu_T0
-        self.__kappa = kappa_T0
-        self.__alpha = alpha_T0
-        self.__beta = beta_T0
+        self.__mu = mu_T0[:cut_point]
+        self.__kappa = kappa_T0[:cut_point]
+        self.__alpha = alpha_T0[:cut_point]
+        self.__beta = beta_T0[:cut_point]
 
 
 def constant_hazard(lam, length):
