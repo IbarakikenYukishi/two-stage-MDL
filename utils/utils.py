@@ -229,8 +229,8 @@ def calc_F1_score(scores, changepoints, tolerance_delay, tuned_threshold=None, d
 
                 estimated_changepoints_prev = np.copy(estimated_changepoints)
 
-            FP = len(changepoints) - TP
-            FN = len(np.where(estimated_changepoints_prev != -1)[0])
+            FN = len(changepoints) - TP
+            FP = len(np.where(estimated_changepoints_prev != -1)[0])
 
             if TP == 0 and FP == 0:
                 precision = 0
@@ -281,8 +281,8 @@ def calc_F1_score(scores, changepoints, tolerance_delay, tuned_threshold=None, d
 
             estimated_changepoints_prev = np.copy(estimated_changepoints)
 
-        FP = len(changepoints) - TP
-        FN = len(np.where(estimated_changepoints_prev != -1)[0])
+        FN = len(changepoints) - TP
+        FP = len(np.where(estimated_changepoints_prev != -1)[0])
 
         if TP == 0 and FP == 0:
             precision = 0
