@@ -8,18 +8,20 @@ class Retrospective:
     Diffierential MDL Change Statistics
     """
 
-    def __init__(self, retrospective_first, retrospective_second):
+    def __init__(self, retrospective_first, retrospective_second, shift):
         """
         Args:
             retrospective_first: SDMDL for the first stage
             retrospective_second: SDMDL for the second stage
+            shift: shift the score or not
         """
 
         self.__h_1 = retrospective_first.h
         self.__h_2 = retrospective_second.h
-        self.__threshold=retrospective_second.threshold_0
+        self.__threshold = retrospective_second.threshold_0
         self.__retrospective_first = retrospective_first
         self.__retrospective_second = retrospective_second
+        self.__shift = shift
 
     def calc_scores(self, X):
         """
@@ -54,15 +56,22 @@ class Retrospective:
             growth_rates[i - self.__h_1] = prob_lengths[i] / \
                 prob_lengths[i - 1] - 1
 
-        probs = np.array([np.nan] * (self.__h_1  - 1) + list(probs) + [np.nan] * self.__h_1)
+        probs = np.array([np.nan] * (self.__h_1 - 1) +
+                         list(probs) + [np.nan] * self.__h_1)
         # 2nd stage scores
         scores = self.__retrospective_second.calc_scores(growth_rates)
-        scores = np.array([np.nan] * self.__h_1 + list(scores) + [np.nan] * self.__h_1)
+        scores = np.array([np.nan] * self.__h_1 +
+                          list(scores) + [np.nan] * self.__h_1)
 
         # set np.nan if the probability decreases
         for j in range(self.__h_1 + self.__h_2 - 1, n - self.__h_1 - self.__h_2):
             if np.mean(probs[j - self.__h_2:j]) > np.mean(probs[j:j + self.__h_2]):
                 scores[j] = np.nan
+
+        data_length = len(scores)
+        scores[2 * (self.__h_1 + self.__h_2): data_length] = scores[self.__h_1 +
+                                                                    self.__h_2: data_length - (self.__h_1 + self.__h_2)]
+        scores[0:2 * (self.__h_1 + self.__h_2)] = np.nan
 
         return scores
 

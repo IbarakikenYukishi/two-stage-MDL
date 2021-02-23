@@ -7,7 +7,7 @@ class Retrospective:
     Diffierential MDL Change Statistics
     """
 
-    def __init__(self, h, encoding_func, complexity_func, delta_0=0.05, delta_1=0.05, delta_2=0.05, order=-1):
+    def __init__(self, h, encoding_func, complexity_func, delta_0=0.05, delta_1=0.05, delta_2=0.05, order=-1, shift=False):
         """
         Args:
             h: half window size
@@ -17,6 +17,7 @@ class Retrospective:
             delta_1: the upper bound on the Type-I error probability of 1st D-MDL
             delta_2: the upper bound on the Type-I error probability of 2nd D-MDL
             order: return which order of D-MDL. if order=-1, return all the statistics.
+            shift: shift the score or not.
         """
         self.__h = h
         self.__encoding_func = encoding_func
@@ -30,6 +31,7 @@ class Retrospective:
         self.__threshold_2 = 2 * \
             (2 * self.__complexity_func(self.__h) - np.log(delta_2))
         self.__order = order
+        self.__shift = shift
 
         # beta for calculation of the change probability
         self.__beta = (np.log(1 - delta_0) - np.log(delta_0)) / \
@@ -76,9 +78,22 @@ class Retrospective:
                 scores_1.append(scores[1])
                 scores_2.append(scores[2])
 
-        scores_0 = scores_0 + [np.nan] * self.__h
-        scores_1 = scores_1 + [np.nan] * self.__h
-        scores_2 = scores_2 + [np.nan] * self.__h
+        scores_0 = np.array(scores_0 + [np.nan] * self.__h)
+        scores_1 = np.array(scores_1 + [np.nan] * self.__h)
+        scores_2 = np.array(scores_2 + [np.nan] * self.__h)
+
+        data_length = len(scores_0)
+
+        if self.__shift == True:
+            scores_0[
+                2 * self.__h - 1: data_length] = scores_0[self.__h - 1: data_length - self.__h]
+            scores_0[0:2 * self.__h - 1] = np.nan
+            scores_1[
+                2 * self.__h - 1: data_length] = scores_1[self.__h - 1: data_length - self.__h]
+            scores_1[0:2 * self.__h - 1] = np.nan
+            scores_2[
+                2 * self.__h - 1: data_length] = scores_2[self.__h - 1: data_length - self.__h]
+            scores_2[0:2 * self.__h - 1] = np.nan
 
         # ignore warnings made by np.nan
         with np.errstate(invalid='ignore'):
