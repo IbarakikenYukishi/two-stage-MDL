@@ -22,6 +22,9 @@ from multiprocessing import Pool
 import multiprocessing as multi
 import boto3
 from settings import AWS_S3_BUCKET_NAME
+import os
+
+print(os.cpu_count())
 
 df = pd.read_csv('./data/factory_sensor.csv')
 
