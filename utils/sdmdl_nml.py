@@ -2,8 +2,10 @@ import numpy as np
 import scipy.linalg as sl
 from scipy import special
 import functools as fts
+from utils.sir import calc_residual_error
 
 # TODO: docstring
+
 
 @fts.lru_cache(maxsize=None)
 def multigamma_ln(a, d):
@@ -11,6 +13,7 @@ def multigamma_ln(a, d):
 
     """
     return special.multigammaln(a, d)
+
 
 @fts.lru_cache(maxsize=None)
 def log_star(k):
@@ -28,8 +31,6 @@ def log_star(k):
     return ret
 
 
-
-
 def nml_gaussian(X, mu_max=100, div_min=0.1, div_max=5):
     """
         encode X by approximation of gaussian's NML by limiting integral domain.
@@ -37,11 +38,13 @@ def nml_gaussian(X, mu_max=100, div_min=0.1, div_max=5):
     n = len(X)
     Xmat = X.reshape((n, -1))
     sigma = np.std(Xmat)
+    sigma = max(sigma, 1e-8)
     log_complexity = complexity_gaussian(
         n, mu_max=mu_max, div_min=div_min, div_max=div_max)
 
-    log_pdf = n * (0.5 + np.log(sigma + 0.0000001) + 0.5 * np.log(2 * np.pi))
+    log_pdf = n * (0.5 + np.log(sigma) + 0.5 * np.log(2 * np.pi))
     return log_pdf + log_complexity
+
 
 @fts.lru_cache(maxsize=None)
 def complexity_gaussian(h, mu_max=100, div_min=0.1, div_max=5):
@@ -49,6 +52,17 @@ def complexity_gaussian(h, mu_max=100, div_min=0.1, div_max=5):
         X's approximate gaussian stochastic complexity by limiting integral domain.
     """
     return (1 / 2) * np.log(16 * mu_max * mu_max / (np.pi * div_min)) + (h / 2) * np.log(h / (2 * np.e)) - special.gammaln((h - 1) / 2)
+
+
+def sir_gaussian(X, mu_max=1, div_min=1e-8, div_max=1e-2, gamma=0.1, beta_init=0.5, eps=1e-12):
+    # X[0]: infectious
+    # X[1]: removed
+    n = X.shape[0]
+    m = X.shape[1]
+    error_cum = calc_residual_error(
+        X[:, 0], X[:, 1], eps, gamma=gamma, beta_init=beta_init)
+
+    return nml_gaussian(error_cum, mu_max=mu_max, div_min=div_min, div_max=div_max)
 
 
 def nml_poisson(X, lmd_max):
@@ -65,9 +79,6 @@ def nml_poisson(X, lmd_max):
 
 def complexity_poisson(h, lmd_max):
     return 0.5 * np.log(h / (2 * np.pi)) + (1 + lmd_max / 2) * np.log(2) + log_star(lmd_max)
-
-
-
 
 
 def nml_multgaussian(X, R=10e6, lambda_min=10e-6):  # ここ怪しい
@@ -98,8 +109,6 @@ def complexity_multgaussian(n, m, R=10e6, lambda_min=10e-6):  # 多分合って�
     return (m + 1) * np.log(2) + (m / 2) * np.log(R) - ((m**2) / 2) * np.log(lambda_min) - (m + 1) * np.log(m) - special.gammaln(m / 2) + \
         (m * n / 2) * np.log(n / (2 * np.e)) - \
         special.multigammaln((n - 1) / 2, m)
-
-
 
 
 def lnml_gaussian(X, sigma_given=1):
@@ -157,6 +166,7 @@ def loss_regression(X):
     logpdf_max = n * (-1 - np.log(2 * np.pi) - np.log(var)) / 2
     capacity = np.log(n)
     return -logpdf_max + capacity
+
 
 def loss_gaussian(X):
     """
