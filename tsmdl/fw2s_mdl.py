@@ -8,7 +8,7 @@ class Retrospective:
     Diffierential MDL Change Statistics
     """
 
-    def __init__(self, retrospective_first, retrospective_second, shift):
+    def __init__(self, retrospective_first, retrospective_second, shift=False):
         """
         Args:
             retrospective_first: SDMDL for the first stage
